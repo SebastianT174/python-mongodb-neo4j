@@ -8,6 +8,10 @@ packages = [{include = "python_neo4j"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
+fastapi = {extras = ["all"], version = "^0.100.0"}
+uvicorn = "^0.23.1"
+pymongo = "^4.4.1"
+neo4j = "^5.10.0"
 
 
 [build-system]
