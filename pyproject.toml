@@ -8,7 +8,6 @@ packages = [{include = "python_neo4j"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-neo4j = "^5.10.0"
 
 
 [build-system]
