@@ -1,8 +1,8 @@
 import json
+from uuid import uuid4
 
 import pymongo
 import uvicorn
-from uuid import uuid4
 from bson import ObjectId
 from bson.json_util import dumps
 from fastapi import FastAPI
@@ -13,6 +13,7 @@ app = FastAPI()
 
 mongo_client = MongoClient("mongodb://root:password@localhost:27017/?authMechanism=DEFAULT")
 neo4j_client = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))
+
 
 # GROUPS
 # CREATE A NEW GROUP
@@ -45,6 +46,7 @@ async def delete_node(node_id):
 
 # GET A LIST OF ALL GROUPS
 
+
 @app.get("/get-all-groups")
 async def get_all_groups():
     db = mongo_client["Assets"]
@@ -53,6 +55,7 @@ async def get_all_groups():
     result = collection.find()
 
     return json.loads(dumps(result))
+
 
 # UPDATE EXISTING GROUPS
 
@@ -67,30 +70,47 @@ async def update_groups(group_id, updated_group: dict):
 
 
 # USERS
+# CREATING NEW USERS
+
 
 @app.post("/create-user")
-async def create_user(firstname: dict):
+async def create_user(body: dict):
+
+    myuuid = uuid4()
+
+    with neo4j_client.session() as session:
+        session.run("CREATE (n:Person {id: $id, firstname: $firstname, lastname: $lastname, age: $age, birthdate: $birthdate})",
+        {"id": str(myuuid), "firstname": body["firstname"], "lastname": body["lastname"],
+        "age": body["age"], "birthdate": body["birthdate"]})
+
+
+# GET A LIST OF ALL USERS
+
+
+@app.get("/get-list-of-users")
+async def get_list_of_users():
+
+    with neo4j_client.session() as session:
+        result = session.run("MATCH (n:Person) return n.id, n.firstname, n.lastname")
+        return result.values()
+
+
+# UPDATE A USER
+
+@app.put("/update-user/{user_id}")
+async def update_user(user_id, updated_username: dict):
+    with neo4j_client.session() as session:
+        session.run("MATCH (n:Person) WHERE n.id = $user_id SET n.firstname = $firstname, n.lastname = $lastname",
+        {"user_id": user_id, "firstname": updated_username["firstname"], "lastname": updated_username["lastname"]})
 
 
 
-# Request body
-# body = {
-#     "first_name": "hfsiuhf",
-#     "last_name": "iaushfiaf",
-#     "age": 35
-# }
+# DELETE A USER
 
-# session.run("CREATE (n:LABEL {id: $id, first_name: $first_name, last_name: $last_name})", {**body, "id": "fakhfs"})
 
-# node_uuid = str(uuid4())
+@app.delete("/delete-user/{user_id}")
+async def delete_user(user_id):
+    with neo4j_client.session() as session:
+        session.run("MATCH (n:Person) WHERE n.id = $user_id DETACH DELETE n", {"user_id": user_id})
 
-obj = {
-    "a": 1
-}
 
-obj2 = {
-    "id": "id",
-    **obj
-}
-
-{"id": "id", "a": 1}
